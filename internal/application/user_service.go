@@ -13,9 +13,9 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 
-	entity "boilerplate-go-pgsql/internal/domain/entity"
-	repo "boilerplate-go-pgsql/internal/domain/repository"
-	"boilerplate-go-pgsql/pkg/helpers"
+	entity "github.com/oksasatya/go-ddd-clean-architecture/internal/domain/entity"
+	repo "github.com/oksasatya/go-ddd-clean-architecture/internal/domain/repository"
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
 )
 
 var (

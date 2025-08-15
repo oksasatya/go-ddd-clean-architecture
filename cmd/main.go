@@ -22,12 +22,12 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"boilerplate-go-pgsql/configs"
-	"boilerplate-go-pgsql/internal/container"
-	pginfra "boilerplate-go-pgsql/internal/infrastructure/postgres"
-	"boilerplate-go-pgsql/internal/interface/middleware"
-	"boilerplate-go-pgsql/internal/router"
-	"boilerplate-go-pgsql/pkg/helpers"
+	"github.com/oksasatya/go-ddd-clean-architecture/configs"
+	"github.com/oksasatya/go-ddd-clean-architecture/internal/container"
+	pginfra "github.com/oksasatya/go-ddd-clean-architecture/internal/infrastructure/postgres"
+	"github.com/oksasatya/go-ddd-clean-architecture/internal/interface/middleware"
+	"github.com/oksasatya/go-ddd-clean-architecture/internal/router"
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
 )
 
 func main() {

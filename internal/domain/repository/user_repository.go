@@ -1,6 +1,6 @@
 package repository
 
-import "boilerplate-go-pgsql/internal/domain/entity"
+import "github.com/oksasatya/go-ddd-clean-architecture/internal/domain/entity"
 
 // UserRepository defines the interface for user-related database operations.
 type UserRepository interface {

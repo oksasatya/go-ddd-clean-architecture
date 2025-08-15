@@ -8,8 +8,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 
-	"boilerplate-go-pgsql/configs"
-	"boilerplate-go-pgsql/pkg/helpers"
+	"github.com/oksasatya/go-ddd-clean-architecture/configs"
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
 )
 
 func main() {

@@ -1,9 +1,10 @@
-module boilerplate-go-pgsql
+module github.com/oksasatya/go-ddd-clean-architecture
 
 go 1.24
 
 require (
 	cloud.google.com/go/storage v1.40.0
+	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang-migrate/migrate/v4 v4.18.3
@@ -14,7 +15,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/crypto v0.37.0
 	google.golang.org/api v0.170.0
-	github.com/gin-contrib/cors v1.5.0
 )
 
 require (

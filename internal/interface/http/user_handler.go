@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
-	userapp "boilerplate-go-pgsql/internal/application"
-	"boilerplate-go-pgsql/pkg/helpers"
+	userapp "github.com/oksasatya/go-ddd-clean-architecture/internal/application"
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
 )
 
 type UserHandler struct {

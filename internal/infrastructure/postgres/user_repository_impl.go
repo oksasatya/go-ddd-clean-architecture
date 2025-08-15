@@ -1,15 +1,15 @@
 package postgres
 
 import (
-	"boilerplate-go-pgsql/internal/domain/repository"
 	"context"
 	"errors"
+	"github.com/oksasatya/go-ddd-clean-architecture/internal/domain/repository"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"boilerplate-go-pgsql/internal/domain/entity"
+	"github.com/oksasatya/go-ddd-clean-architecture/internal/domain/entity"
 )
 
 var (

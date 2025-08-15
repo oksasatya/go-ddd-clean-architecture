@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"boilerplate-go-pgsql/pkg/helpers"
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
 )
 
 const CtxUserIDKey = "userID"

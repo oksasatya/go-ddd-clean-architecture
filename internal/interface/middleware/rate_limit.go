@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 
-	"boilerplate-go-pgsql/pkg/helpers"
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
 )
 
 // KeyFunc builds a rate-limit key from the request

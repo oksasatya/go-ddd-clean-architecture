@@ -1,12 +1,12 @@
 package router
 
 import (
-	appuser "boilerplate-go-pgsql/internal/application"
-	"boilerplate-go-pgsql/internal/container"
-	repouser "boilerplate-go-pgsql/internal/domain/repository"
-	pginfra "boilerplate-go-pgsql/internal/infrastructure/postgres"
-	handlers "boilerplate-go-pgsql/internal/interface/http"
-	usermodule "boilerplate-go-pgsql/internal/router/modules/user"
+	appuser "github.com/oksasatya/go-ddd-clean-architecture/internal/application"
+	"github.com/oksasatya/go-ddd-clean-architecture/internal/container"
+	repouser "github.com/oksasatya/go-ddd-clean-architecture/internal/domain/repository"
+	pginfra "github.com/oksasatya/go-ddd-clean-architecture/internal/infrastructure/postgres"
+	handlers "github.com/oksasatya/go-ddd-clean-architecture/internal/interface/http"
+	usermodule "github.com/oksasatya/go-ddd-clean-architecture/internal/router/modules/user"
 )
 
 type UserModuleDeps struct {

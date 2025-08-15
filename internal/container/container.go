@@ -6,8 +6,8 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 
-	"boilerplate-go-pgsql/configs"
-	"boilerplate-go-pgsql/pkg/helpers"
+	"github.com/oksasatya/go-ddd-clean-architecture/configs"
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
 )
 
 // Simple app-level container to share constructed components across packages

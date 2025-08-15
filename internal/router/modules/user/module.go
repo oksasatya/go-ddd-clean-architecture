@@ -4,11 +4,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"time"
 
-	"boilerplate-go-pgsql/internal/container"
+	"github.com/oksasatya/go-ddd-clean-architecture/internal/container"
 
-	handlers "boilerplate-go-pgsql/internal/interface/http"
-	"boilerplate-go-pgsql/internal/interface/middleware"
-	"boilerplate-go-pgsql/pkg/helpers"
+	handlers "github.com/oksasatya/go-ddd-clean-architecture/internal/interface/http"
+	"github.com/oksasatya/go-ddd-clean-architecture/internal/interface/middleware"
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
 )
 
 // Module wires user HTTP handlers and JWT middleware into routes
