@@ -4,15 +4,16 @@
 FROM golang:1.24-bookworm AS builder
 WORKDIR /src
 
-# Enable static build for minimal final image
-ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+ENV CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
 
-# Pre-cache deps
+# Copy go files and download deps
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-# Copy the rest of the source
+# Copy rest of the source
 COPY . .
 
 # Build the binary
@@ -22,25 +23,23 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # ---------- Runtime stage ----------
 FROM alpine:3.20
 
-# Install certificates and timezone data
+# Install ca-certificates (for GCS & HTTPS calls) and tzdata
 RUN apk add --no-cache ca-certificates tzdata
 
 WORKDIR /app
 
-# Copy binary and runtime assets (migrations)
-COPY --from=builder /out/server /app/server
-COPY db/migrations /app/db/migrations
+# Copy binary and runtime assets
+COPY --from=builder /out/server ./server
+COPY db/migrations ./db/migrations
 
-# Non-root user
-RUN addgroup -S app && adduser -S -G app appuser
+# Drop privileges
+RUN adduser -S appuser
 USER appuser
 
-ENV GIN_MODE=release
-# Railway sets PORT; ensure default for local run
+# If not set by Railway → fallback to 8080
 ENV PORT=8080
+ENV GIN_MODE=release
 
 EXPOSE 8080
 
-# Start the service
-CMD ["/app/server"]
-
+CMD ["./server"]

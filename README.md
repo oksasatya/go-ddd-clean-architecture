@@ -96,7 +96,7 @@ Run locally
 - Prereq: Go 1.22+ (or latest), Postgres, Redis, golang-migrate CLI
 - Install modules: make tidy
 - Run migrations: make migrate-up
-- Seed demo user: make seed (email: demo@example.com, password: password)
+- Seed demo user: make seed (email: admin@example.com, password: password123)
 - Start API: make run (listens on :$PORT)
 
 API overview
