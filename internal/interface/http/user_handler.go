@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/response"
 	"net/http"
 	"time"
 
@@ -37,42 +38,42 @@ type updateProfileRequest struct {
 func (h *UserHandler) Login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Email == "" || req.Password == "" {
-		resp := helpers.Error[any](c, http.StatusBadRequest, "invalid payload", nil)
+		resp := response.Error[any](c, http.StatusBadRequest, "invalid payload", nil)
 		c.JSON(resp.Status, resp)
 		return
 	}
 	res, pair, err := h.Svc.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		resp := helpers.Error[any](c, http.StatusUnauthorized, "invalid credentials", nil)
+		resp := response.Error[any](c, http.StatusUnauthorized, "invalid credentials", nil)
 		c.JSON(resp.Status, resp)
 		return
 	}
 	setAuthCookies(c, pair.AccessToken, pair.AccessTokenExpiry, pair.RefreshToken, pair.RefreshTokenExpiry, h.CookieDomain, h.CookieSecure)
-	resp := helpers.Success(c, http.StatusOK, res, "login successful", map[string]any{"access_expires_at": pair.AccessTokenExpiry, "refresh_expires_at": pair.RefreshTokenExpiry})
+	resp := response.Success(c, http.StatusOK, res, "login successful", map[string]any{"access_expires_at": pair.AccessTokenExpiry, "refresh_expires_at": pair.RefreshTokenExpiry})
 	c.JSON(resp.Status, resp)
 }
 
 func (h *UserHandler) Refresh(c *gin.Context) {
 	refresh, err := c.Cookie("refresh_token")
 	if err != nil || refresh == "" {
-		resp := helpers.Error[any](c, http.StatusUnauthorized, "missing refresh token", nil)
+		resp := response.Error[any](c, http.StatusUnauthorized, "missing refresh token", nil)
 		c.JSON(resp.Status, resp)
 		return
 	}
 	pair, _, err := h.Svc.Refresh(c.Request.Context(), refresh)
 	if err != nil {
-		resp := helpers.Error[any](c, http.StatusUnauthorized, "invalid refresh token", nil)
+		resp := response.Error[any](c, http.StatusUnauthorized, "invalid refresh token", nil)
 		c.JSON(resp.Status, resp)
 		return
 	}
 	setAuthCookies(c, pair.AccessToken, pair.AccessTokenExpiry, pair.RefreshToken, pair.RefreshTokenExpiry, h.CookieDomain, h.CookieSecure)
-	resp := helpers.Success[any](c, http.StatusOK, map[string]any{"refreshed": true}, "token refreshed", map[string]any{"access_expires_at": pair.AccessTokenExpiry, "refresh_expires_at": pair.RefreshTokenExpiry})
+	resp := response.Success[any](c, http.StatusOK, map[string]any{"refreshed": true}, "token refreshed", map[string]any{"access_expires_at": pair.AccessTokenExpiry, "refresh_expires_at": pair.RefreshTokenExpiry})
 	c.JSON(resp.Status, resp)
 }
 
 func (h *UserHandler) Logout(c *gin.Context) {
 	clearAuthCookies(c, h.CookieDomain, h.CookieSecure)
-	resp := helpers.Success[any](c, http.StatusOK, map[string]any{"logged_out": true}, "logged out", nil)
+	resp := response.Success[any](c, http.StatusOK, map[string]any{"logged_out": true}, "logged out", nil)
 	c.JSON(resp.Status, resp)
 }
 
@@ -80,11 +81,11 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	uid := c.GetString("userID")
 	u, err := h.Svc.GetProfile(uid)
 	if err != nil {
-		resp := helpers.Error[any](c, http.StatusNotFound, "user not found", nil)
+		resp := response.Error[any](c, http.StatusNotFound, "user not found", nil)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	resp := helpers.Success(c, http.StatusOK, gin.H{
+	resp := response.Success(c, http.StatusOK, gin.H{
 		"id":         u.ID,
 		"email":      u.Email,
 		"name":       u.Name,
@@ -99,17 +100,17 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	uid := c.GetString("userID")
 	var req updateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		resp := helpers.Error[any](c, http.StatusBadRequest, "invalid payload", nil)
+		resp := response.Error[any](c, http.StatusBadRequest, "invalid payload", nil)
 		c.JSON(resp.Status, resp)
 		return
 	}
 	u, err := h.Svc.UpdateProfile(c.Request.Context(), uid, userapp.UpdateProfileInput{Name: req.Name, AvatarURL: req.AvatarURL})
 	if err != nil {
-		resp := helpers.Error[any](c, http.StatusBadRequest, "failed to update profile", err.Error())
+		resp := response.Error[any](c, http.StatusBadRequest, "failed to update profile", err.Error())
 		c.JSON(resp.Status, resp)
 		return
 	}
-	resp := helpers.Success(c, http.StatusOK, gin.H{
+	resp := response.Success(c, http.StatusOK, gin.H{
 		"id":         u.ID,
 		"email":      u.Email,
 		"name":       u.Name,
