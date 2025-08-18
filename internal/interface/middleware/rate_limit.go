@@ -1,14 +1,13 @@
 package middleware
 
 import (
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/response"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-
-	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
 )
 
 // KeyFunc builds a rate-limit key from the request
@@ -69,7 +68,7 @@ func RateLimit(rdb *redis.Client, max int, window time.Duration, keyFn KeyFunc) 
 			if ttl > 0 {
 				c.Header("Retry-After", strconv.Itoa(int(ttl.Seconds())))
 			}
-			resp := helpers.Error[any](c, http.StatusTooManyRequests, "rate limit exceeded", nil)
+			resp := response.Error[any](c, http.StatusTooManyRequests, "rate limit exceeded", nil)
 			c.AbortWithStatusJSON(resp.Status, resp)
 			return
 		}

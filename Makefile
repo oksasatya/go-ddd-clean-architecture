@@ -44,3 +44,9 @@ migrate-drop:
 seed:
 	go run cmd/seed/main.go
 
+tunnel:
+	cloudflared tunnel run development-server
+
+dev:
+	go run cmd/main.go &
+	cloudflared tunnel run development-server

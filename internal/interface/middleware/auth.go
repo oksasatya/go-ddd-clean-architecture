@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,13 +16,13 @@ func Auth(rdb *redis.Client, jwt *helpers.JWTManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := c.Cookie("access_token")
 		if err != nil || token == "" {
-			resp := helpers.Error[any](c, http.StatusUnauthorized, "missing access token", nil)
+			resp := response.Error[any](c, http.StatusUnauthorized, "missing access token", nil)
 			c.AbortWithStatusJSON(resp.Status, resp)
 			return
 		}
 		claims, err := jwt.ParseAccessToken(token)
 		if err != nil {
-			resp := helpers.Error[any](c, http.StatusUnauthorized, "invalid access token", err.Error())
+			resp := response.Error[any](c, http.StatusUnauthorized, "invalid access token", err.Error())
 			c.AbortWithStatusJSON(resp.Status, resp)
 			return
 		}
@@ -30,7 +31,7 @@ func Auth(rdb *redis.Client, jwt *helpers.JWTManager) gin.HandlerFunc {
 		key := "user:session:" + claims.UserID
 		data, err := rdb.HGetAll(c.Request.Context(), key).Result()
 		if err != nil || len(data) == 0 {
-			resp := helpers.Error[any](c, http.StatusUnauthorized, "session not found", nil)
+			resp := response.Error[any](c, http.StatusUnauthorized, "session not found", nil)
 			c.AbortWithStatusJSON(resp.Status, resp)
 			return
 		}

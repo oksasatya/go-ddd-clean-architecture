@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cloud.google.com/go/storage"
 	"context"
 	"database/sql"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -56,11 +58,17 @@ func main() {
 	defer func() { _ = rdb.Close() }()
 
 	// GCS (available for DI in services that need it)
-	gcsClient, err := helpers.NewGCSClient(ctx, cfg.GCSCredentialsJSONPath)
-	if err != nil {
-		log.Fatalf("failed to init GCS client: %v", err)
+	var gcsClient *storage.Client
+	if cfg.GCSCredentialsJSONPath != "" {
+		gcsClient, err = helpers.NewGCSClient(ctx, cfg.GCSCredentialsJSONPath)
+		if err != nil {
+			log.Fatalf("failed to init GCS client: %v", err)
+		}
+		container.SetGCS(gcsClient)
+		defer func() { _ = gcsClient.Close() }()
+	} else {
+		logger.Warn("GCS client not initialized (GCSCredentialsJSONPath is empty)")
 	}
-	defer func() { _ = gcsClient.Close() }()
 
 	// JWT
 	jwtManager := helpers.NewJWTManager(cfg.JWTAccessSecret, cfg.JWTRefreshSecret, cfg.AccessTTL, cfg.RefreshTTL)
@@ -90,7 +98,9 @@ func main() {
 	if cfg.Env == "development" {
 		r.Use(gin.Logger())
 	}
-
+	r.GET("/api/check", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
 	// Registry: auto-register modules using container
 	reg := router.NewRegistry(r)
 	router.InitModules(reg)
@@ -110,7 +120,7 @@ func main() {
 	<-quit
 	logger.Info("shutting down server")
 
-	ctxShutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctxShutdown); err != nil {
 		logger.Fatalf("server forced to shutdown: %v", err)
@@ -119,7 +129,29 @@ func main() {
 }
 
 func runMigrations(dsn string, migrationsDir string, logger *logrus.Logger) error {
-	// Open sql DB via pgx stdlib
+	// Resolve migrationsDir to an absolute path and verify it exists
+	absDir, err := filepath.Abs(migrationsDir)
+	if err != nil {
+		return fmt.Errorf("resolve migrations dir: %w", err)
+	}
+	if _, statErr := os.Stat(absDir); os.IsNotExist(statErr) {
+		// Try relative to the executable directory (useful when running compiled binary)
+		exePath, exeErr := os.Executable()
+		if exeErr == nil {
+			exeDir := filepath.Dir(exePath)
+			alt := filepath.Join(exeDir, migrationsDir)
+			if _, altErr := os.Stat(alt); altErr == nil {
+				absDir = alt
+			} else {
+				logger.Errorf("migrations dir not found: %s (also tried %s)", absDir, alt)
+				return fmt.Errorf("migrations dir not found: %s", absDir)
+			}
+		} else {
+			logger.Errorf("migrations dir not found: %s", absDir)
+			return fmt.Errorf("migrations dir not found: %s", absDir)
+		}
+	}
+
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return err
@@ -129,11 +161,12 @@ func runMigrations(dsn string, migrationsDir string, logger *logrus.Logger) erro
 	if err != nil {
 		return err
 	}
-	m, err := migrate.NewWithDatabaseInstance(fmt.Sprintf("file://%s", migrationsDir), "postgres", driver)
+	srcURL := fmt.Sprintf("file://%s", filepath.ToSlash(absDir))
+	m, err := migrate.NewWithDatabaseInstance(srcURL, "postgres", driver)
 	if err != nil {
 		return err
 	}
-	logger.Info("running migrations...")
+	logger.Infof("running migrations from %s", srcURL)
 	err = m.Up()
 	if errors.Is(migrate.ErrNoChange, err) {
 		logger.Info("no migrations to run")

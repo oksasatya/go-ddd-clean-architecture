@@ -129,7 +129,7 @@ func Load() *Config {
 		CookieDomain: getenv("COOKIE_DOMAIN", "localhost"),
 		CookieSecure: getbool("COOKIE_SECURE", false),
 
-		CORSAllowedOrigins: getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000"),
+		CORSAllowedOrigins: getenv("CORS_ALLOWED_ORIGINS", ""),
 
 		MigrationsDir: getenv("MIGRATIONS_DIR", "db/migrations"),
 	}

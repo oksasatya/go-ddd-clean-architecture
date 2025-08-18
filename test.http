@@ -1,0 +1,2 @@
+### Check API via Cloudflare Tunnel
+GET https://backend-api.oksasatya.dev/api/check
