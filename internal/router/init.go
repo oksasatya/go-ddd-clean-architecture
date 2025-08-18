@@ -6,7 +6,7 @@ import (
 	repouser "github.com/oksasatya/go-ddd-clean-architecture/internal/domain/repository"
 	pginfra "github.com/oksasatya/go-ddd-clean-architecture/internal/infrastructure/postgres"
 	handlers "github.com/oksasatya/go-ddd-clean-architecture/internal/interface/http"
-	usermodule "github.com/oksasatya/go-ddd-clean-architecture/internal/router/modules/user"
+	"github.com/oksasatya/go-ddd-clean-architecture/internal/router/modules"
 )
 
 type UserModuleDeps struct {
@@ -46,5 +46,5 @@ func buildUserDeps() UserModuleDeps {
 // This function should be called once during application startup to wire up all modules
 func InitModules(r *Registry) {
 	userDeps := buildUserDeps()
-	r.Add(usermodule.New(userDeps.Handler, container.GetJWT()))
+	r.Add(modules.New(userDeps.Handler, container.GetJWT()))
 }

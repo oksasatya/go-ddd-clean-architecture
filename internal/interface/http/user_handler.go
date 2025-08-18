@@ -41,14 +41,14 @@ func (h *UserHandler) Login(c *gin.Context) {
 		c.JSON(resp.Status, resp)
 		return
 	}
-	res, access, aexp, refresh, rexp, err := h.Svc.Login(req.Email, req.Password)
+	res, pair, err := h.Svc.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		resp := helpers.Error[any](c, http.StatusUnauthorized, "invalid credentials", nil)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	setAuthCookies(c, access, aexp, refresh, rexp, h.CookieDomain, h.CookieSecure)
-	resp := helpers.Success(c, http.StatusOK, res, "login successful", map[string]any{"access_expires_at": aexp, "refresh_expires_at": rexp})
+	setAuthCookies(c, pair.AccessToken, pair.AccessTokenExpiry, pair.RefreshToken, pair.RefreshTokenExpiry, h.CookieDomain, h.CookieSecure)
+	resp := helpers.Success(c, http.StatusOK, res, "login successful", map[string]any{"access_expires_at": pair.AccessTokenExpiry, "refresh_expires_at": pair.RefreshTokenExpiry})
 	c.JSON(resp.Status, resp)
 }
 
@@ -59,14 +59,14 @@ func (h *UserHandler) Refresh(c *gin.Context) {
 		c.JSON(resp.Status, resp)
 		return
 	}
-	access, aexp, newRefresh, rexp, _, err := h.Svc.Refresh(refresh)
+	pair, _, err := h.Svc.Refresh(c.Request.Context(), refresh)
 	if err != nil {
 		resp := helpers.Error[any](c, http.StatusUnauthorized, "invalid refresh token", nil)
 		c.JSON(resp.Status, resp)
 		return
 	}
-	setAuthCookies(c, access, aexp, newRefresh, rexp, h.CookieDomain, h.CookieSecure)
-	resp := helpers.Success[any](c, http.StatusOK, map[string]any{"refreshed": true}, "token refreshed", map[string]any{"access_expires_at": aexp, "refresh_expires_at": rexp})
+	setAuthCookies(c, pair.AccessToken, pair.AccessTokenExpiry, pair.RefreshToken, pair.RefreshTokenExpiry, h.CookieDomain, h.CookieSecure)
+	resp := helpers.Success[any](c, http.StatusOK, map[string]any{"refreshed": true}, "token refreshed", map[string]any{"access_expires_at": pair.AccessTokenExpiry, "refresh_expires_at": pair.RefreshTokenExpiry})
 	c.JSON(resp.Status, resp)
 }
 
@@ -103,7 +103,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		c.JSON(resp.Status, resp)
 		return
 	}
-	u, err := h.Svc.UpdateProfile(uid, userapp.UpdateProfileInput{Name: req.Name, AvatarURL: req.AvatarURL})
+	u, err := h.Svc.UpdateProfile(c.Request.Context(), uid, userapp.UpdateProfileInput{Name: req.Name, AvatarURL: req.AvatarURL})
 	if err != nil {
 		resp := helpers.Error[any](c, http.StatusBadRequest, "failed to update profile", err.Error())
 		c.JSON(resp.Status, resp)

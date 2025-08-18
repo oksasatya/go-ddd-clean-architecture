@@ -1,4 +1,4 @@
-package user
+package modules
 
 import (
 	"github.com/gin-gonic/gin"
@@ -35,7 +35,7 @@ func (m *Module) Register(rg *gin.RouterGroup) {
 
 	// Protected
 	auth := rg.Group("/")
-	auth.Use(middleware.JWTAuth(m.JWT))
+	auth.Use(middleware.Auth(container.GetRedis(), m.JWT))
 	// Apply a softer per-IP limiter to all protected routes
 	auth.Use(middleware.RateLimit(container.GetRedis(), 120, time.Minute, middleware.KeyByIP()))
 	{
