@@ -8,13 +8,13 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 
-	"github.com/oksasatya/go-ddd-clean-architecture/configs"
+	"github.com/oksasatya/go-ddd-clean-architecture/config"
 	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
 )
 
 func main() {
 	_ = godotenv.Load()
-	cfg := configs.Load()
+	cfg := config.Load()
 
 	dsn := cfg.PostgresDSN()
 	db, err := sql.Open("pgx", dsn)

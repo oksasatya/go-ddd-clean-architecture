@@ -24,20 +24,24 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"github.com/oksasatya/go-ddd-clean-architecture/configs"
+	"github.com/oksasatya/go-ddd-clean-architecture/config"
 	"github.com/oksasatya/go-ddd-clean-architecture/internal/container"
 	pginfra "github.com/oksasatya/go-ddd-clean-architecture/internal/infrastructure/postgres"
 	"github.com/oksasatya/go-ddd-clean-architecture/internal/interface/middleware"
 	"github.com/oksasatya/go-ddd-clean-architecture/internal/router"
 	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/validation"
 )
 
 func main() {
 	_ = godotenv.Load() // load .env if present
 
-	cfg := configs.Load()
+	cfg := config.Load()
 	logger := helpers.NewLogger(cfg.AppName, cfg.Env)
 	gin.SetMode(cfg.GinMode)
+
+	// Initialize custom validator (uses JSON field names, alias tags)
+	validation.Init()
 
 	ctx := context.Background()
 
@@ -84,7 +88,42 @@ func main() {
 	// Gin engine and global middleware
 	r := gin.New()
 	r.Use(gin.Recovery())
+
+	// Trusted proxies: for dev use none; in prod, whitelist Cloudflare ranges
+	if cfg.Env == "production" {
+		_ = r.SetTrustedProxies([]string{
+			// Cloudflare IPv4
+			"173.245.48.0/20",
+			"103.21.244.0/22",
+			"103.22.200.0/22",
+			"103.31.4.0/22",
+			"141.101.64.0/18",
+			"108.162.192.0/18",
+			"190.93.240.0/20",
+			"188.114.96.0/20",
+			"197.234.240.0/22",
+			"198.41.128.0/17",
+			"162.158.0.0/15",
+			"104.16.0.0/13",
+			"104.24.0.0/14",
+			"172.64.0.0/13",
+			"131.0.72.0/22",
+			// Cloudflare IPv6
+			"2400:cb00::/32",
+			"2606:4700::/32",
+			"2803:f800::/32",
+			"2405:b500::/32",
+			"2405:8100::/32",
+			"2a06:98c0::/29",
+			"2c0f:f248::/32",
+		})
+	} else {
+		_ = r.SetTrustedProxies(nil)
+	}
+
+	// Request ID then Real IP extraction
 	r.Use(middleware.RequestIDMiddleware())
+	r.Use(middleware.RealIP())
 	// CORS
 	corsCfg := cors.Config{
 		AllowOrigins:     cfg.CORSOrigins(),
@@ -98,6 +137,22 @@ func main() {
 	if cfg.Env == "development" {
 		r.Use(gin.Logger())
 	}
+
+	r.Use(middleware.RateLimit(
+		rdb,
+		300,
+		time.Minute,
+		middleware.KeyByIPAndPath(),
+		middleware.AllowPrivateIP(),
+	))
+	// Example route to show client vs real IP
+	r.GET("/api/ip", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"client_ip": c.ClientIP(),
+			"real_ip":   c.GetString("real_ip"),
+		})
+	})
+
 	r.GET("/api/check", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})

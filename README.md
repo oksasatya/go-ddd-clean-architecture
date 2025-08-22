@@ -17,7 +17,7 @@ Architecture & folders
 cmd/
   main.go                 # app entrypoint, DI, migrations, graceful shutdown
   seed/main.go            # simple seeder (demo user)
-configs/
+config/
   config.go               # env config, DSN helpers, CORS origins
 internal/
   domain/

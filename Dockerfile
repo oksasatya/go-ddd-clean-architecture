@@ -18,7 +18,7 @@ COPY . .
 
 # Build the binary
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    go build -ldflags="-s -w" -o /out/server ./cmd
+    go build -ldflags="-s -w" -o /out/server ./cmd/main.go
 
 # ---------- Runtime stage ----------
 FROM alpine:3.20

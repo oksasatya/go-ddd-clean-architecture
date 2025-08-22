@@ -6,15 +6,15 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 
-	"github.com/oksasatya/go-ddd-clean-architecture/configs"
+	"github.com/oksasatya/go-ddd-clean-architecture/config"
 	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
 )
 
-// Simple app-level container to share constructed components across packages
+// app-level container to share constructed components across packages
 // Router can auto-wire modules from these singletons.
 
 var (
-	cfg         *configs.Config
+	cfg         *config.Config
 	logger      *logrus.Logger
 	pgPool      *pgxpool.Pool
 	redisClient *redis.Client
@@ -23,8 +23,8 @@ var (
 	jwtManager *helpers.JWTManager
 )
 
-func SetConfig(c *configs.Config)  { cfg = c }
-func GetConfig() *configs.Config   { return cfg }
+func SetConfig(c *config.Config)   { cfg = c }
+func GetConfig() *config.Config    { return cfg }
 func SetLogger(l *logrus.Logger)   { logger = l }
 func GetLogger() *logrus.Logger    { return logger }
 func SetPGPool(p *pgxpool.Pool)    { pgPool = p }
