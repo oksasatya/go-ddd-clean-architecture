@@ -1,11 +1,12 @@
 package helpers
 
 import (
-	"cloud.google.com/go/storage"
 	"context"
 	"fmt"
-	"google.golang.org/api/option"
 	"io"
+
+	"cloud.google.com/go/storage"
+	"google.golang.org/api/option"
 )
 
 // NewGCSClient creates a Google Cloud Storage client. If credsPath is empty, ADC is used.

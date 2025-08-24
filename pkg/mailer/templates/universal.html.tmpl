@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Template</title>
+    <style>
+        /* Reset styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Container */
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 40px 30px;
+            text-align: center;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        /* Content */
+        .content {
+            padding: 40px;
+        }
+
+        .greeting {
+            font-size: 18px;
+            color: #1e293b;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .message {
+            font-size: 16px;
+            color: #475569;
+            margin-bottom: 32px;
+            line-height: 1.7;
+        }
+
+        /* Button */
+        .button-container {
+            text-align: center;
+            margin: 32px 0;
+        }
+
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white !important;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 14px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Info box */
+        .info-box {
+            background: #f1f5f9;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 24px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .info-box h3 {
+            color: #1e293b;
+            font-size: 16px;
+            margin: 0 0 12px 0;
+            font-weight: 600;
+            line-height: 1.2;
+            padding: 0;
+        }
+
+        .info-box p {
+            margin: 0;
+            padding: 0;
+            color: #475569;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .info-list li {
+            padding: 6px 0;
+            color: #475569;
+            font-size: 14px;
+            margin: 0;
+            display: block;
+            line-height: 1.5;
+        }
+
+        .info-list li strong {
+            color: #1e293b;
+            display: inline-block;
+            min-width: 100px;
+            margin-right: 8px;
+            vertical-align: top;
+        }
+
+        /* Changes list */
+        .changes-list {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+
+        .changes-list h3 {
+            color: #1e293b;
+            font-size: 16px;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .change-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .change-item:last-child {
+            border-bottom: none;
+        }
+
+        .change-label {
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .change-value {
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        /* Warning */
+        .warning {
+            background: #fef3cd;
+            border: 1px solid #fde047;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+            color: #92400e;
+            font-size: 14px;
+        }
+
+        .warning strong {
+            color: #78350f;
+        }
+
+        /* Footer */
+        .footer {
+            background: #f8fafc;
+            padding: 32px 40px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .footer p {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .footer-links {
+            margin-top: 16px;
+        }
+
+        .footer-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            margin: 0 12px;
+        }
+
+        /* Responsive */
+        @media screen and (max-width: 640px) {
+            body {
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .email-container {
+                margin: 10px !important;
+                border-radius: 8px !important;
+                width: calc(100% - 20px) !important;
+                max-width: none !important;
+            }
+
+            .header, .content, .footer {
+                padding: 20px !important;
+            }
+
+            .header h1 {
+                font-size: 22px !important;
+                line-height: 1.2 !important;
+            }
+
+            .greeting {
+                font-size: 16px !important;
+                margin-bottom: 20px !important;
+            }
+
+            .message {
+                font-size: 15px !important;
+                line-height: 1.6 !important;
+                margin-bottom: 24px !important;
+            }
+
+            .btn {
+                display: block !important;
+                width: 100% !important;
+                max-width: 280px !important;
+                margin: 0 auto !important;
+                padding: 16px 20px !important;
+                font-size: 16px !important;
+                text-align: center !important;
+                box-sizing: border-box !important;
+            }
+
+            .button-container {
+                margin: 24px 0 !important;
+            }
+
+            .info-box, .changes-list, .warning {
+                margin: 20px 0 !important;
+                padding: 16px !important;
+            }
+
+            .info-box h3 {
+                font-size: 15px !important;
+                margin: 0 0 10px 0 !important;
+                padding: 0 !important;
+                line-height: 1.2 !important;
+            }
+
+            .info-list li {
+                font-size: 13px !important;
+                padding: 4px 0 !important;
+                word-break: break-word !important;
+                display: block !important;
+                line-height: 1.4 !important;
+            }
+
+            .info-list li strong {
+                display: block !important;
+                min-width: auto !important;
+                margin: 0 0 2px 0 !important;
+                font-size: 13px !important;
+            }
+
+            .change-item {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 4px !important;
+                padding: 10px 0 !important;
+            }
+
+            .change-label, .change-value {
+                font-size: 14px !important;
+                word-break: break-word !important;
+            }
+
+            .warning {
+                font-size: 13px !important;
+            }
+
+            .footer p {
+                font-size: 12px !important;
+                margin-bottom: 6px !important;
+            }
+
+            .footer-links {
+                margin-top: 12px !important;
+            }
+
+            .footer-links a {
+                display: inline-block !important;
+                margin: 4px 8px !important;
+                font-size: 12px !important;
+            }
+
+            table {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            img {
+                max-width: 100% !important;
+                height: auto !important;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .email-container {
+                margin: 5px !important;
+                width: calc(100% - 10px) !important;
+            }
+
+            .header, .content, .footer {
+                padding: 16px !important;
+            }
+
+            .btn {
+                padding: 14px 16px !important;
+                font-size: 15px !important;
+            }
+
+            .footer-links a {
+                display: block !important;
+                margin: 2px 0 !important;
+                text-align: center !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Email Container -->
+<div class="email-container">
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <!-- Logo placeholder - bisa diganti dengan <img src="{{.LogoURL}}" alt="Logo"> -->
+            L
+        </div>
+        <h1>{{.CompanyName | default "Your Company"}}</h1>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        <div class="greeting">
+            Hi {{.Name}},
+        </div>
+
+        <!-- Template untuk Password Reset -->
+        {{if eq .Type "forgot_password"}}
+            <div class="message">
+                We received a request to reset your password for your account.
+            </div>
+
+            <div class="button-container">
+                <a href="{{.ResetURL}}" class="btn">Reset Your Password</a>
+            </div>
+
+            <div class="info-box">
+                <h3>⏰ Important Information</h3>
+                <p>This link will expire on <strong>{{.ExpiresAtText}}</strong> for security reasons.</p>
+            </div>
+
+            <div class="warning">
+                <strong>Didn't request this?</strong> You can safely ignore this email if you didn't request a password reset.
+            </div>
+        {{end}}
+
+        <!-- Template untuk Email Verification -->
+        {{if eq .Type "verify_email"}}
+            <div class="message">
+                Thank you for signing up! Please verify your email address to complete your account setup.
+            </div>
+
+            <div class="button-container">
+                <a href="{{.VerifyURL}}" class="btn">Verify Email Address</a>
+            </div>
+
+            <div class="info-box">
+                <h3>⏰ Verification Link</h3>
+                <p>This verification link will expire on <strong>{{.ExpiresAtText}}</strong>.</p>
+            </div>
+
+            <div class="warning">
+                <strong>Didn't sign up?</strong> You can safely ignore this email if you didn't create an account.
+            </div>
+        {{end}}
+
+        <!-- Template untuk Login Notification -->
+        {{if eq .Type "login_notification"}}
+            <div class="message">
+                We detected a new login to your account. Here are the details:
+            </div>
+
+            <div class="info-box">
+                <h3>🔐 Login Details</h3>
+                <ul class="info-list">
+                    <li><strong>IP Address:</strong> {{.IP}}</li>
+                    <li><strong>Time:</strong> {{.Time}}</li>
+                    <li><strong>Browser:</strong> {{.UserAgent}}</li>
+                    <li><strong>Location:</strong> {{.Location | default "Unknown"}}</li>
+                </ul>
+            </div>
+
+            <div class="warning">
+                <strong>This wasn't you?</strong> If you don't recognize this login, please secure your account immediately by resetting your password.
+            </div>
+
+            <div class="button-container">
+                <a href="{{.ResetURL}}" class="btn">Reset Password</a>
+            </div>
+        {{end}}
+
+        <!-- Template untuk Profile Update -->
+        {{if eq .Type "profile_updated"}}
+            <div class="message">
+                Your profile has been successfully updated. Here's a summary of the changes:
+            </div>
+
+            <div class="changes-list">
+                <h3>📝 Updated Information</h3>
+                {{range $key, $value := .Changes}}
+                    <div class="change-item">
+                        <span class="change-label">{{$key}}</span>
+                        <span class="change-value">{{$value}}</span>
+                    </div>
+                {{end}}
+            </div>
+
+            <div class="warning">
+                <strong>Didn't make these changes?</strong> Please review your account security settings and contact support if needed.
+            </div>
+        {{end}}
+
+        <!-- Template untuk Login OTP -->
+        {{if eq .Type "login_otp"}}
+            <div class="message">
+                Use the verification code below to complete your login.
+            </div>
+
+            <div style="text-align:center; margin: 28px 0;">
+                <div style="display:inline-block; font-size: 32px; letter-spacing: 8px; font-weight: 800; color:#1e293b; background:#f8fafc; border:1px solid #e2e8f0; padding: 14px 20px; border-radius: 10px;">
+                    {{.Code}}
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3>⏰ Code Expiration</h3>
+                <p>Your code will expire on <strong>{{.ExpiresAtText}}</strong>. If it expires, you can request a new one.</p>
+            </div>
+
+            <div class="info-box">
+                <h3>🔐 Security Details</h3>
+                <ul class="info-list">
+                    <li><strong>IP Address:</strong> {{.IP | default "Unknown"}}</li>
+                    <li><strong>Browser:</strong> {{.UserAgent | default "Unknown"}}</li>
+                    <li><strong>Location:</strong> {{.Location | default "Unknown"}}</li>
+                </ul>
+            </div>
+        {{end}}
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>{{ default "Your Company" .CompanyName }}</strong></p>
+        <p>{{ default "Your Company Address" .CompanyAddress }}</p>
+
+        <div class="footer-links">
+            <a href="{{ default "#" .SupportURL }}">Support</a>
+            <a href="{{ default "#" .PrivacyURL }}">Privacy Policy</a>
+            <a href="{{ default "#" .UnsubscribeURL }}">Unsubscribe</a>
+        </div>
+
+        <p style="margin-top: 16px; font-size: 12px; color: #94a3b8;">
+            This email was sent to {{ default "your email" .RecipientEmail }}. If you no longer wish to receive these emails, you can unsubscribe at any time.
+        </p>
+    </div>
+</div>
+</body>
+</html>

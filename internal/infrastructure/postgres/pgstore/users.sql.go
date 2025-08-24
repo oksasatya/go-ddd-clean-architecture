@@ -14,7 +14,7 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (email, password, name, avatar_url)
 VALUES ($1, $2, $3, $4)
-RETURNING id, email, password, name, avatar_url, created_at, updated_at
+RETURNING id, email, password, name, avatar_url, is_verified, created_at, updated_at
 `
 
 type CreateUserParams struct {
@@ -24,20 +24,32 @@ type CreateUserParams struct {
 	AvatarUrl string `json:"avatar_url"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+type CreateUserRow struct {
+	ID         pgtype.UUID        `json:"id"`
+	Email      string             `json:"email"`
+	Password   string             `json:"password"`
+	Name       string             `json:"name"`
+	AvatarUrl  string             `json:"avatar_url"`
+	IsVerified bool               `json:"is_verified"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
 	row := q.db.QueryRow(ctx, createUser,
 		arg.Email,
 		arg.Password,
 		arg.Name,
 		arg.AvatarUrl,
 	)
-	var i User
+	var i CreateUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.Password,
 		&i.Name,
 		&i.AvatarUrl,
+		&i.IsVerified,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -45,20 +57,32 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password, name, avatar_url, created_at, updated_at
+SELECT id, email, password, name, avatar_url, is_verified, created_at, updated_at
 FROM users
 WHERE email = $1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+type GetUserByEmailRow struct {
+	ID         pgtype.UUID        `json:"id"`
+	Email      string             `json:"email"`
+	Password   string             `json:"password"`
+	Name       string             `json:"name"`
+	AvatarUrl  string             `json:"avatar_url"`
+	IsVerified bool               `json:"is_verified"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
 	row := q.db.QueryRow(ctx, getUserByEmail, email)
-	var i User
+	var i GetUserByEmailRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.Password,
 		&i.Name,
 		&i.AvatarUrl,
+		&i.IsVerified,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -66,24 +90,64 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, password, name, avatar_url, created_at, updated_at
+SELECT id, email, password, name, avatar_url, is_verified, created_at, updated_at
 FROM users
 WHERE id = $1
 `
 
-func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (User, error) {
+type GetUserByIDRow struct {
+	ID         pgtype.UUID        `json:"id"`
+	Email      string             `json:"email"`
+	Password   string             `json:"password"`
+	Name       string             `json:"name"`
+	AvatarUrl  string             `json:"avatar_url"`
+	IsVerified bool               `json:"is_verified"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (GetUserByIDRow, error) {
 	row := q.db.QueryRow(ctx, getUserByID, id)
-	var i User
+	var i GetUserByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.Password,
 		&i.Name,
 		&i.AvatarUrl,
+		&i.IsVerified,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const getUserIsVerified = `-- name: GetUserIsVerified :one
+SELECT is_verified
+FROM users
+WHERE id = $1
+`
+
+func (q *Queries) GetUserIsVerified(ctx context.Context, id pgtype.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, getUserIsVerified, id)
+	var is_verified bool
+	err := row.Scan(&is_verified)
+	return is_verified, err
+}
+
+const setUserVerified = `-- name: SetUserVerified :execrows
+UPDATE users
+SET is_verified = true,
+    updated_at = now()
+WHERE id = $1
+`
+
+func (q *Queries) SetUserVerified(ctx context.Context, id pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, setUserVerified, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const updateUser = `-- name: UpdateUser :execrows
@@ -112,6 +176,26 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int64, 
 		arg.Name,
 		arg.AvatarUrl,
 	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const updateUserPassword = `-- name: UpdateUserPassword :execrows
+UPDATE users
+SET password = $2,
+    updated_at = now()
+WHERE id = $1
+`
+
+type UpdateUserPasswordParams struct {
+	ID       pgtype.UUID `json:"id"`
+	Password string      `json:"password"`
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateUserPassword, arg.ID, arg.Password)
 	if err != nil {
 		return 0, err
 	}

@@ -8,4 +8,7 @@ type UserRepository interface {
 	GetByID(id string) (*entity.User, error)
 	GetByEmail(email string) (*entity.User, error)
 	Update(u *entity.User) error
+	UpdatePassword(userID string, passwordHash string) error
+	IsVerified(userID string) (bool, error)
+	SetVerified(userID string) error
 }

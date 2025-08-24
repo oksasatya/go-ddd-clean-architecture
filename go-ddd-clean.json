@@ -1,0 +1,356 @@
+{
+  "info": {
+    "name": "go-ddd-clean-architecture API",
+    "_postman_id": "7a0e7b64-0c34-4a3e-b5e7-6ed7f2c02c00",
+    "description": "Collection to test auth, profile, email, and search endpoints. Auth is cookie-based (access_token, refresh_token). Postman will store cookies for the same host automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/check",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "check"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "IP",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ip",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ip"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "description": "On success (trusted device), sets access_token and refresh_token cookies. If 202 Accepted with {requires_otp:true}, check your email for the 6-digit code, then call /login/otp/confirm."
+          },
+          "response": []
+        },
+        {
+          "name": "Login OTP Confirm",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"{{otpCode}}\",\n  \"remember_device\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/login/otp/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["login", "otp", "confirm"]
+            },
+            "description": "Confirms the 6-digit OTP sent to email. If remember_device=true, sets a device_id cookie and trusts this device for 30 days."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "refresh"
+              ]
+            },
+            "description": "Uses refresh_token cookie to issue a new access_token."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Init (JWT)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify/init",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify",
+                "init"
+              ]
+            },
+            "description": "Requires access_token cookie. Use after login to send a verification email link ({{VERIFY_EMAIL_URL}}?token=...)."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Confirm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{verifyToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify",
+                "confirm"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Init",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset/init",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset",
+                "init"
+              ]
+            },
+            "description": "Always returns 200. If user exists, also sends reset email and returns link {{RESET_PASSWORD_URL}}?token=... in payload."
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Confirm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"new_password\": \"NewP@ssw0rd!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset",
+                "confirm"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Protected",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile"
+              ]
+            },
+            "description": "Requires access_token cookie."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile (sends profile_updated email)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Name\",\n  \"avatar_url\": \"https://example.com/avatar.png\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "profile"
+              ]
+            },
+            "description": "Requires access_token cookie."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Users (ES)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/search?q={{searchQuery}}&size=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "search"
+              ],
+              "query": [
+                { "key": "q", "value": "{{searchQuery}}" },
+                { "key": "size", "value": "5" }
+              ]
+            },
+            "description": "Requires access_token cookie."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Email",
+      "item": [
+        {
+          "name": "Enqueue Email (universal template)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"{{email}}\",\n  \"template\": \"universal\",\n  \"data\": {\n    \"Type\": \"login_notification\",\n    \"Name\": \"Postman User\",\n    \"IP\": \"1.2.3.4\",\n    \"Time\": \"2025-08-24T10:00:00Z\",\n    \"UserAgent\": \"PostmanRuntime/7.40\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/email/send",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "email",
+                "send"
+              ]
+            },
+            "description": "Requires access_token cookie."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "https://backend-api.oksasatya.dev/api" },
+    { "key": "email", "value": "oksasatyaa@gmail.com" },
+    { "key": "password", "value": "password123" },
+    { "key": "verifyToken", "value": "" },
+    { "key": "resetToken", "value": "" },
+    { "key": "searchQuery", "value": "demoUser" },
+    { "key": "otpCode", "value": "" }
+  ]
+}

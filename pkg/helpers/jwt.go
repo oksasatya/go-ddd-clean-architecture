@@ -32,14 +32,16 @@ func NewJWTManager(accessSecret, refreshSecret string, accessTTL, refreshTTL tim
 func DefaultJWT() *JWTManager { return defaultManager }
 
 type Claims struct {
-	UserID string `json:"uid"`
+	UserID    string `json:"uid"`
+	SessionID string `json:"sid"`
 	jwt.RegisteredClaims
 }
 
-func (m *JWTManager) GenerateAccessToken(userID string) (string, time.Time, error) {
+func (m *JWTManager) GenerateAccessToken(userID string, sessionID string) (string, time.Time, error) {
 	exp := time.Now().Add(m.AccessTTL)
 	claims := &Claims{
-		UserID: userID,
+		UserID:    userID,
+		SessionID: sessionID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(exp),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -50,10 +52,11 @@ func (m *JWTManager) GenerateAccessToken(userID string) (string, time.Time, erro
 	return s, exp, err
 }
 
-func (m *JWTManager) GenerateRefreshToken(userID string) (string, time.Time, error) {
+func (m *JWTManager) GenerateRefreshToken(userID string, sessionID string) (string, time.Time, error) {
 	exp := time.Now().Add(m.RefreshTTL)
 	claims := &Claims{
-		UserID: userID,
+		UserID:    userID,
+		SessionID: sessionID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(exp),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

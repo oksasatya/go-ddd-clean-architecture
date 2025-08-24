@@ -8,12 +8,24 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type User struct {
-	ID        pgtype.UUID        `json:"id"`
-	Email     string             `json:"email"`
-	Password  string             `json:"password"`
-	Name      string             `json:"name"`
-	AvatarUrl string             `json:"avatar_url"`
+type AuditLog struct {
+	ID        int64              `json:"id"`
+	UserID    pgtype.UUID        `json:"user_id"`
+	Email     pgtype.Text        `json:"email"`
+	Action    string             `json:"action"`
+	Ip        pgtype.Text        `json:"ip"`
+	UserAgent pgtype.Text        `json:"user_agent"`
+	Metadata  []byte             `json:"metadata"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type User struct {
+	ID         pgtype.UUID        `json:"id"`
+	Email      string             `json:"email"`
+	Password   string             `json:"password"`
+	Name       string             `json:"name"`
+	AvatarUrl  string             `json:"avatar_url"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+	IsVerified bool               `json:"is_verified"`
 }

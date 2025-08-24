@@ -14,7 +14,7 @@ DB_NAME ?= appdb
 DB_SSLMODE ?= disable
 DB_DSN := postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)
 
-.PHONY: tidy build run sqlc-generate migrate-up migrate-down migrate-drop seed
+.PHONY: tidy build run sqlc-generate migrate-up migrate-down migrate-drop seed tunnel dev worker-run worker-build
 
 # Go module helpers
 tidy:
@@ -25,6 +25,13 @@ build:
 
 run:
 	go run cmd/main.go
+
+# Worker helpers
+worker-run:
+	go run cmd/email_worker/main.go
+
+worker-build:
+	go build -o ./bin/email_worker cmd/email_worker/main.go
 
 # sqlc
 sqlc-generate:
@@ -49,4 +56,5 @@ tunnel:
 
 dev:
 	go run cmd/main.go &
+	go run cmd/email_worker/main.go &
 	cloudflared tunnel run development-server

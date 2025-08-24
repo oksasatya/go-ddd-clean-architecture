@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/cmd/seed/main.go" value="2d8b16b5-9b47-4c3d-9cea-6c847fb30f4d" />
+    <file url="file://$PROJECT_DIR$/internal/infrastructure/postgres/user_repository_impl.go" value="2d8b16b5-9b47-4c3d-9cea-6c847fb30f4d" />
+    <file url="file://$PROJECT_DIR$/internal/interface/http/auth_handler.go" value="2d8b16b5-9b47-4c3d-9cea-6c847fb30f4d" />
+  </component>
+</project>

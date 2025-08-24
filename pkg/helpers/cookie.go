@@ -29,6 +29,16 @@ func (m *Manager) Clear(c *gin.Context) {
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("access_token", "", -1, "/", m.Domain, m.Secure, true)
 	c.SetCookie("refresh_token", "", -1, "/", m.Domain, m.Secure, true)
+	// Match HttpOnly=true used when setting device_id
+	c.SetCookie("device_id", "", -1, "/", m.Domain, m.Secure, true)
+}
+
+// SetDeviceID stores a long-lived device identifier cookie used to recognize trusted devices.
+func (m *Manager) SetDeviceID(c *gin.Context, deviceID string, exp time.Time) {
+	c.SetSameSite(http.SameSiteLaxMode)
+	dMax := maxAgeFrom(exp)
+	// HttpOnly for better security; sent automatically on requests.
+	c.SetCookie("device_id", deviceID, dMax, "/", m.Domain, m.Secure, true)
 }
 
 func maxAgeFrom(exp time.Time) int {

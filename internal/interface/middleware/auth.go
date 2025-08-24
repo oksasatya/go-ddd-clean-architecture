@@ -27,11 +27,16 @@ func Auth(rdb *redis.Client, jwt *helpers.JWTManager) gin.HandlerFunc {
 			return
 		}
 
-		// Retrieve session from Redis as a hash
+		// Retrieve session from Redis as a hash and validate session id
 		key := "user:session:" + claims.UserID
 		data, err := rdb.HGetAll(c.Request.Context(), key).Result()
 		if err != nil || len(data) == 0 {
 			response.Error[any](c, http.StatusUnauthorized, "session not found", nil)
+			c.Abort()
+			return
+		}
+		if sid, ok := data["sid"]; !ok || sid == "" || sid != claims.SessionID {
+			response.Error[any](c, http.StatusUnauthorized, "session expired", nil)
 			c.Abort()
 			return
 		}

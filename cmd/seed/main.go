@@ -23,7 +23,9 @@ func main() {
 	}
 	defer func() { _ = db.Close() }()
 
+	email := "oksasatyaa@gmail.com"
 	password := "password123"
+	user := "demoUser"
 	hash, err := helpers.HashPassword(password)
 	if err != nil {
 		log.Fatalf("failed to hash password: %v", err)
@@ -35,9 +37,9 @@ func main() {
 		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (email) DO UPDATE SET name=EXCLUDED.name
 		RETURNING id
-	`, "admin@example.com", hash, "Demo User", "").Scan(&id)
+	`, email, hash, user, "").Scan(&id)
 	if err != nil {
 		log.Fatalf("failed to seed user: %v", err)
 	}
-	fmt.Printf("seeded user: id=%s email=admin@example.com password=%s\n", id, password)
+	fmt.Printf("seeded user: id=%s email=%s name=%s password=%s\n", id, email, user, password)
 }

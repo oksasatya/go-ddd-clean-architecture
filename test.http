@@ -1,2 +1,110 @@
-### Check API via Cloudflare Tunnel
-GET https://backend-api.oksasatya.dev/api/check
+### Base
+@host = https://backend-api.oksasatya.dev
+@base = {{host}}/api
+
+### Health check
+GET {{base}}/check
+
+### Get observed IPs (proxy-aware)
+GET {{base}}/ip
+
+### Login (gets Set-Cookie: access_token, refresh_token)
+POST {{base}}/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "your_password_here"
+}
+
+### Refresh access token (uses refresh_token cookie)
+POST {{base}}/refresh
+
+### Protected: Get profile (requires cookies)
+GET {{base}}/profile
+# If your client doesn’t auto-send cookies, paste them manually:
+# Cookie: access_token=PASTE_HERE; refresh_token=PASTE_HERE
+
+### Protected: Update profile (triggers profile_updated email when fields actually change)
+PUT {{base}}/profile
+Content-Type: application/json
+# Cookie: access_token=PASTE_HERE; refresh_token=PASTE_HERE
+
+{
+  "name": "New Name",
+  "avatar_url": "https://example.com/avatar.png"
+}
+
+### Protected: Logout
+POST {{base}}/logout
+# Cookie: access_token=PASTE_HERE; refresh_token=PASTE_HERE
+
+### Protected: Search users (Elasticsearch)
+GET {{base}}/users/search?q=john&size=5
+# Cookie: access_token=PASTE_HERE; refresh_token=PASTE_HERE
+
+### Protected: Enqueue email via template (RabbitMQ -> Mailgun)
+POST {{base}}/email/send
+Content-Type: application/json
+# Cookie: access_token=PASTE_HERE; refresh_token=PASTE_HERE
+
+{
+  "to": "user@example.com",
+  "template": "universal",
+  "data": {
+    "Type": "login_notification",
+    "Name": "User Name",
+    "IP": "1.2.3.4",
+    "Time": "2025-08-24T10:00:00Z",
+    "UserAgent": "Mozilla/5.0"
+  }
+}
+
+### Auth: Init email verification (returns VERIFY_EMAIL_URL?token=...)
+POST {{base}}/auth/verify/init
+# Cookie: access_token=PASTE_HERE; refresh_token=PASTE_HERE
+
+### Auth: Confirm email verification with token
+POST {{base}}/auth/verify/confirm
+Content-Type: application/json
+
+{
+  "token": "PASTE_TOKEN_FROM_VERIFY_URL"
+}
+
+### Auth: Init password reset (returns RESET_PASSWORD_URL?token=...)
+POST {{base}}/auth/reset/init
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+
+### Auth: Confirm password reset
+POST {{base}}/auth/reset/confirm
+Content-Type: application/json
+
+{
+  "token": "PASTE_TOKEN_FROM_RESET_URL",
+  "new_password": "NewP@ssw0rd!"
+}
+
+### Login OTP Confirm (set remember_device=true to trust this device for 30 days)
+POST {{base}}/login/otp/confirm
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "code": "123456",
+  "remember_device": true
+}
+
+### Login again from trusted device (should return 200 with tokens, no OTP)
+POST {{base}}/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "your_password_here"
+}
+

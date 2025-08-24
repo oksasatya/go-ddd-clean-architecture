@@ -2,12 +2,14 @@ package container
 
 import (
 	"cloud.google.com/go/storage"
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 
 	"github.com/oksasatya/go-ddd-clean-architecture/config"
 	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/mailer"
 )
 
 // app-level container to share constructed components across packages
@@ -21,6 +23,10 @@ var (
 	gcsClient   *storage.Client
 
 	jwtManager *helpers.JWTManager
+
+	mailgunClient *mailer.Mailgun
+	rabbitPub     *helpers.RabbitPublisher
+	esClient      *elasticsearch.Client
 )
 
 func SetConfig(c *config.Config)   { cfg = c }
@@ -40,3 +46,10 @@ func GetJWT() *helpers.JWTManager {
 	}
 	return helpers.DefaultJWT()
 }
+
+func SetMailgun(m *mailer.Mailgun)            { mailgunClient = m }
+func GetMailgun() *mailer.Mailgun             { return mailgunClient }
+func SetRabbitPub(p *helpers.RabbitPublisher) { rabbitPub = p }
+func GetRabbitPub() *helpers.RabbitPublisher  { return rabbitPub }
+func SetES(c *elasticsearch.Client)           { esClient = c }
+func GetES() *elasticsearch.Client            { return esClient }

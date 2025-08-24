@@ -51,6 +51,34 @@ type Config struct {
 
 	// Migrations
 	MigrationsDir string
+
+	// Mailgun
+	MailgunDomain string
+	MailgunAPIKey string
+	MailgunSender string
+
+	// RabbitMQ
+	RabbitMQURL        string
+	RabbitMQEmailQueue string
+
+	// Elasticsearch
+	ElasticsearchAddrs string // comma-separated
+	ElasticsearchUser  string
+	ElasticsearchPass  string
+	ESUsersIndex       string
+
+	// Company/Links for emails
+	CompanyName      string
+	CompanyAddress   string
+	LogoURL          string
+	SupportURL       string
+	PrivacyURL       string
+	UnsubscribeURL   string
+	ResetPasswordURL string
+	VerifyEmailURL   string
+
+	// Email sending toggle
+	MailSendEnabled bool
 }
 
 func getenv(key, def string) string {
@@ -132,6 +160,30 @@ func Load() *Config {
 		CORSAllowedOrigins: getenv("CORS_ALLOWED_ORIGINS", ""),
 
 		MigrationsDir: getenv("MIGRATIONS_DIR", "db/migrations"),
+
+		MailgunDomain: getenv("MAILGUN_DOMAIN", ""),
+		MailgunAPIKey: getenv("MAILGUN_API_KEY", ""),
+		MailgunSender: getenv("MAILGUN_SENDER", ""),
+
+		RabbitMQURL:        getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
+		RabbitMQEmailQueue: getenv("RABBITMQ_EMAIL_QUEUE", "emails"),
+
+		ElasticsearchAddrs: getenv("ELASTICSEARCH_ADDRS", "http://localhost:9200"),
+		ElasticsearchUser:  getenv("ELASTICSEARCH_USERNAME", ""),
+		ElasticsearchPass:  getenv("ELASTICSEARCH_PASSWORD", ""),
+		ESUsersIndex:       getenv("ES_USERS_INDEX", "users"),
+
+		CompanyName:      getenv("COMPANY_NAME", ""),
+		CompanyAddress:   getenv("COMPANY_ADDRESS", ""),
+		LogoURL:          getenv("LOGO_URL", ""),
+		SupportURL:       getenv("SUPPORT_URL", ""),
+		PrivacyURL:       getenv("PRIVACY_URL", ""),
+		UnsubscribeURL:   getenv("UNSUBSCRIBE_URL", ""),
+		ResetPasswordURL: getenv("RESET_PASSWORD_URL", "http://localhost:8080/reset-password"),
+		VerifyEmailURL:   getenv("VERIFY_EMAIL_URL", "http://localhost:8080/verify-email"),
+
+		// Email sending toggle (default true for backward compatibility)
+		MailSendEnabled: getbool("MAIL_SEND_ENABLED", true),
 	}
 }
 
@@ -145,6 +197,19 @@ func (c *Config) PostgresDSN() string {
 // CORSOrigins returns the allowed origins as slice
 func (c *Config) CORSOrigins() []string {
 	parts := strings.Split(c.CORSAllowedOrigins, ",")
+	res := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			res = append(res, p)
+		}
+	}
+	return res
+}
+
+// ESAddrs returns Elasticsearch addresses as a slice
+func (c *Config) ESAddrs() []string {
+	parts := strings.Split(c.ElasticsearchAddrs, ",")
 	res := make([]string, 0, len(parts))
 	for _, p := range parts {
 		p = strings.TrimSpace(p)

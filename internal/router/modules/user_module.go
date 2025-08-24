@@ -1,8 +1,9 @@
 package modules
 
 import (
-	"github.com/gin-gonic/gin"
 	"time"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/oksasatya/go-ddd-clean-architecture/internal/container"
 
@@ -29,8 +30,10 @@ func (m *Module) Register(rg *gin.RouterGroup) {
 	// Public with rate limiting
 	loginLimiter := middleware.RateLimit(container.GetRedis(), 10, time.Minute, middleware.KeyByIP(), nil)   // 10 req/min per IP
 	refreshLimiter := middleware.RateLimit(container.GetRedis(), 60, time.Minute, middleware.KeyByIP(), nil) // 60 req/min per IP
+	otpConfirmLimiter := middleware.RateLimit(container.GetRedis(), 60, time.Minute, middleware.KeyByIPAndPath(), nil)
 
 	rg.POST("/login", loginLimiter, m.Handler.Login)
+	rg.POST("/login/otp/confirm", otpConfirmLimiter, m.Handler.LoginOTPConfirm)
 	rg.POST("/refresh", refreshLimiter, m.Handler.Refresh)
 
 	// Protected
@@ -45,5 +48,7 @@ func (m *Module) Register(rg *gin.RouterGroup) {
 		auth.POST("/logout", m.Handler.Logout)
 		auth.GET("/profile", m.Handler.GetProfile)
 		auth.PUT("/profile", m.Handler.UpdateProfile)
+		// Search users via Elasticsearch
+		auth.GET("/users/search", m.Handler.Search)
 	}
 }

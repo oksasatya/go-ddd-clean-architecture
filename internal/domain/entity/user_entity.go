@@ -9,11 +9,12 @@ import (
 //
 // In a real-world app, prefer value objects for Email, etc.
 type User struct {
-	ID        string
-	Email     string
-	Password  string
-	Name      string
-	AvatarURL string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID         string
+	Email      string
+	Password   string
+	Name       string
+	AvatarURL  string
+	IsVerified bool
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }

@@ -101,7 +101,7 @@ func formatFieldError(fe validator.FieldError) string {
 
 	// ===== STRING FORMAT VALIDATIONS =====
 	case "email":
-		return "must be a valid email address"
+		return "must be a valid email"
 	case "url":
 		return "must be a valid URL"
 	case "uri":
@@ -411,7 +411,7 @@ func formatFieldError(fe validator.FieldError) string {
 
 	// ===== CUSTOM ALIASES =====
 	case "pwd":
-		return "must be at least 8 characters long"
+		return "min length 8"
 	case "strongpwd":
 		return "must be at least 8 characters with uppercase, lowercase, number and special character"
 	case "phone":

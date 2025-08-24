@@ -1,7 +1,6 @@
 package main
 
 import (
-	"cloud.google.com/go/storage"
 	"context"
 	"database/sql"
 	"errors"
@@ -14,6 +13,9 @@ import (
 	"syscall"
 	"time"
 
+	"cloud.google.com/go/storage"
+
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -30,6 +32,7 @@ import (
 	"github.com/oksasatya/go-ddd-clean-architecture/internal/interface/middleware"
 	"github.com/oksasatya/go-ddd-clean-architecture/internal/router"
 	"github.com/oksasatya/go-ddd-clean-architecture/pkg/helpers"
+	"github.com/oksasatya/go-ddd-clean-architecture/pkg/mailer"
 	"github.com/oksasatya/go-ddd-clean-architecture/pkg/validation"
 )
 
@@ -77,6 +80,35 @@ func main() {
 	// JWT
 	jwtManager := helpers.NewJWTManager(cfg.JWTAccessSecret, cfg.JWTRefreshSecret, cfg.AccessTTL, cfg.RefreshTTL)
 
+	// RabbitMQ publisher for email queue
+	var rabbitPub *helpers.RabbitPublisher
+	if cfg.RabbitMQURL != "" {
+		rabbitPub, err = helpers.NewRabbitPublisher(cfg.RabbitMQURL, cfg.RabbitMQEmailQueue)
+		if err != nil {
+			logger.WithError(err).Warn("failed to connect to RabbitMQ; email enqueue will be unavailable")
+		} else {
+			defer rabbitPub.Close()
+		}
+	}
+
+	// Mailgun client (used by background worker; also exposed for any direct sends if needed)
+	var mgClient *mailer.Mailgun
+	if cfg.MailgunDomain != "" && cfg.MailgunAPIKey != "" && cfg.MailgunSender != "" {
+		mgClient = mailer.NewMailgun(cfg.MailgunDomain, cfg.MailgunAPIKey, cfg.MailgunSender)
+	} else {
+		logger.Warn("Mailgun not fully configured; worker will fail to send emails")
+	}
+
+	// Elasticsearch client
+	var esClient *elasticsearch.Client
+	if len(cfg.ESAddrs()) > 0 {
+		if c, esErr := helpers.NewESClient(cfg.ESAddrs(), cfg.ElasticsearchUser, cfg.ElasticsearchPass); esErr != nil {
+			logger.WithError(esErr).Warn("failed to init Elasticsearch client")
+		} else {
+			esClient = c
+		}
+	}
+
 	// Provide infra singletons to container for registry auto-wiring
 	container.SetConfig(cfg)
 	container.SetLogger(logger)
@@ -84,6 +116,9 @@ func main() {
 	container.SetRedis(rdb)
 	container.SetGCS(gcsClient)
 	container.SetJWT(jwtManager)
+	container.SetRabbitPub(rabbitPub)
+	container.SetMailgun(mgClient)
+	container.SetES(esClient)
 
 	// Gin engine and global middleware
 	r := gin.New()
@@ -138,14 +173,22 @@ func main() {
 		r.Use(gin.Logger())
 	}
 
-	r.Use(middleware.RateLimit(
-		rdb,
-		300,
-		time.Minute,
-		middleware.KeyByIPAndPath(),
-		middleware.AllowPrivateIP(),
-	))
-	// Example route to show client vs real IP
+	// Temporarily disable rate limiter
+	// r.Use(middleware.RateLimit(
+	// 	rdb,
+	// 	300,
+	// 	time.Minute,
+	// 	middleware.KeyByIPAndPath(),
+	// 	middleware.AllowPrivateIP(),
+	// ))
+
+	// Example routes to show client vs real IP
+	r.GET("/ip", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"client_ip": c.ClientIP(),
+			"real_ip":   c.GetString("real_ip"),
+		})
+	})
 	r.GET("/api/ip", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"client_ip": c.ClientIP(),
