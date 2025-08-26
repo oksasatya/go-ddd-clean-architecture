@@ -174,13 +174,13 @@ func main() {
 	}
 
 	// Temporarily disable rate limiter
-	// r.Use(middleware.RateLimit(
-	// 	rdb,
-	// 	300,
-	// 	time.Minute,
-	// 	middleware.KeyByIPAndPath(),
-	// 	middleware.AllowPrivateIP(),
-	// ))
+	r.Use(middleware.RateLimit(
+		rdb,
+		300,
+		time.Minute,
+		middleware.KeyByIPAndPath(),
+		middleware.AllowPrivateIP(),
+	))
 
 	// Example routes to show client vs real IP
 	r.GET("/ip", func(c *gin.Context) {
