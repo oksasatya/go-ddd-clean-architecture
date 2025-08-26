@@ -169,8 +169,10 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}
 	r.Use(cors.New(corsCfg))
-	if cfg.Env == "development" {
-		r.Use(gin.Logger())
+	// Enable access log only when explicitly turned on
+	if cfg.HTTPLogEnabled {
+		// Also skip debug metrics paths when logging is enabled
+		r.Use(gin.LoggerWithConfig(gin.LoggerConfig{SkipPaths: []string{"/debug/vars", "/api/debug/vars"}}))
 	}
 
 	// Temporarily disable rate limiter

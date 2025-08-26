@@ -1,0 +1,724 @@
+openapi: 3.0.3
+info:
+  title: Go DDD Clean Architecture API
+  version: 1.0.0
+  description: |
+    REST API for authentication, user profile, email enqueue, and debug metrics.
+    
+    Conventions
+    - All JSON responses use an envelope with `meta` and either `data` or `error`.
+    - Protected endpoints require `access_token` cookie. Refresh uses `refresh_token` cookie.
+    - Rate limits vary by route; see each operation description.
+servers:
+  - url: http://localhost:8080
+    description: Local
+  - url: https://api.example.com
+    description: Production (replace with your domain)
+security: []
+tags:
+  - name: Auth
+  - name: Users
+  - name: Email
+  - name: Debug
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: refresh_token
+  schemas:
+    Meta:
+      type: object
+      properties:
+        request_id:
+          type: string
+          description: Correlation ID
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        ip:
+          type: string
+          description: Client IP
+        os:
+          type: string
+          description: Parsed OS from User-Agent
+      required: [request_id, timestamp, status]
+    ErrorBody:
+      type: object
+      properties:
+        message:
+          type: string
+        details:
+          description: Validation details or extra info
+      required: [message]
+    EnvelopeBase:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/Meta'
+      required: [meta]
+    EnvelopeError:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            error:
+              $ref: '#/components/schemas/ErrorBody'
+          required: [error]
+    UserProfile:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        name: { type: string }
+        avatar_url: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+      required: [id, email, name, created_at, updated_at]
+    LoginRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        name: { type: string, description: Optional and ignored }
+      required: [email, password]
+    LoginSuccessData:
+      type: object
+      properties:
+        user_id: { type: string }
+        email: { type: string, format: email }
+        name: { type: string }
+      required: [user_id, email, name]
+    LoginOTPRequiredData:
+      type: object
+      properties:
+        requires_otp:
+          type: boolean
+          enum: [true]
+      required: [requires_otp]
+    LoginOTPConfirmRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        code: { type: string, pattern: '^[0-9]{6}$' }
+        remember_device: { type: boolean, default: false }
+      required: [email, code]
+    RefreshData:
+      type: object
+      properties:
+        refreshed:
+          type: boolean
+          enum: [true]
+      required: [refreshed]
+    LogoutData:
+      type: object
+      properties:
+        logged_out:
+          type: boolean
+          enum: [true]
+      required: [logged_out]
+    VerifyInitAlreadyData:
+      type: object
+      properties:
+        already_verified:
+          type: boolean
+          enum: [true]
+      required: [already_verified]
+    VerifyInitLinkData:
+      type: object
+      properties:
+        verify_link:
+          type: string
+          format: uri
+      required: [verify_link]
+    VerifyConfirmRequest:
+      type: object
+      properties:
+        token: { type: string }
+      required: [token]
+    VerifyConfirmData:
+      type: object
+      properties:
+        verified:
+          type: boolean
+          enum: [true]
+      required: [verified]
+    ResetInitRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+      required: [email]
+    ResetInitData:
+      type: object
+      properties:
+        reset_link:
+          type: string
+          description: May be empty string when email not found
+      required: [reset_link]
+    ResetConfirmRequest:
+      type: object
+      properties:
+        token: { type: string }
+        new_password: { type: string, format: password }
+      required: [token, new_password]
+    ResetConfirmData:
+      type: object
+      properties:
+        reset:
+          type: boolean
+          enum: [true]
+      required: [reset]
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name: { type: string }
+        avatar_url: { type: string }
+    SearchResultItem:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        name: { type: string }
+        avatar_url: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+      required: [id, email, name, created_at, updated_at]
+    EmailSendRequestTemplate:
+      type: object
+      properties:
+        to: { type: string, format: email }
+        template: { type: string, description: 'login_notification | verify_email | forgot_password | profile_updated | universal' }
+        data:
+          type: object
+          additionalProperties: true
+      required: [to, template]
+    EmailSendRequestRaw:
+      type: object
+      properties:
+        to: { type: string, format: email }
+        subject: { type: string }
+        text: { type: string }
+        html: { type: string }
+      required: [to, subject]
+      anyOf:
+        - required: [text]
+        - required: [html]
+    EmailSendAcceptedData:
+      type: object
+      properties:
+        enqueued:
+          type: boolean
+          enum: [true]
+      required: [enqueued]
+    EmailSendDisabledData:
+      type: object
+      properties:
+        enqueued:
+          type: boolean
+          enum: [false]
+        disabled:
+          type: boolean
+          enum: [true]
+      required: [enqueued, disabled]
+    EnvelopeLoginSuccess:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/LoginSuccessData' }
+          required: [data]
+    EnvelopeLoginOTPRequired:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/LoginOTPRequiredData' }
+          required: [data]
+    EnvelopeRefresh:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/RefreshData' }
+          required: [data]
+    EnvelopeLogout:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/LogoutData' }
+          required: [data]
+    EnvelopeProfile:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/UserProfile' }
+          required: [data]
+    EnvelopeVerifyInit:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              oneOf:
+                - $ref: '#/components/schemas/VerifyInitAlreadyData'
+                - $ref: '#/components/schemas/VerifyInitLinkData'
+          required: [data]
+    EnvelopeVerifyConfirm:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/VerifyConfirmData' }
+          required: [data]
+    EnvelopeResetInit:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/ResetInitData' }
+          required: [data]
+    EnvelopeResetConfirm:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/ResetConfirmData' }
+          required: [data]
+    EnvelopeSearchResults:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data:
+              type: array
+              items: { $ref: '#/components/schemas/SearchResultItem' }
+          required: [data]
+    EnvelopeEmailSendAccepted:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/EmailSendAcceptedData' }
+          required: [data]
+    EnvelopeEmailSendDisabled:
+      allOf:
+        - $ref: '#/components/schemas/EnvelopeBase'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/EmailSendDisabledData' }
+          required: [data]
+  parameters:
+    QParam:
+      name: q
+      in: query
+      required: true
+      schema: { type: string }
+      description: Search query
+    SizeParam:
+      name: size
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      description: Number of results
+paths:
+  /api/login:
+    post:
+      tags: [Users]
+      summary: Login with email and password
+      description: |
+        Rate limit: 10 requests per minute per IP.
+        On trusted device, returns tokens via Set-Cookie and 200.
+        Otherwise, 202 with requires_otp=true and sends OTP via email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+            examples:
+              default:
+                value: { email: user@example.com, password: Passw0rd! }
+      responses:
+        '200':
+          description: Login successful (trusted device)
+          headers:
+            Set-Cookie:
+              description: access_token and refresh_token cookies are set
+              schema: { type: string }
+              example: >-
+                access_token=...; Path=/; HttpOnly; Secure; SameSite=Lax, refresh_token=...; Path=/; HttpOnly; Secure; SameSite=Lax
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeLoginSuccess' }
+        '202':
+          description: OTP required (untrusted device)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeLoginOTPRequired' }
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '503':
+          description: OTP infrastructure unavailable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '500':
+          description: Login failed (internal)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+  /api/login/otp/confirm:
+    post:
+      tags: [Users]
+      summary: Confirm OTP to complete login
+      description: 60 requests per minute per IP+path.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginOTPConfirmRequest' }
+            examples:
+              default:
+                value: { email: user@example.com, code: '123456', remember_device: true }
+      responses:
+        '200':
+          description: Login successful, sets auth cookies; may also set device_id if remember_device=true
+          headers:
+            Set-Cookie:
+              description: access_token, refresh_token (and optionally device_id) cookies are set
+              schema: { type: string }
+              example: >-
+                access_token=...; Path=/; HttpOnly; Secure; SameSite=Lax, refresh_token=...; Path=/; HttpOnly; Secure; SameSite=Lax, device_id=...; Path=/; Secure; SameSite=Lax
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeLoginSuccess' }
+        '401':
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '503':
+          description: OTP unavailable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+  /api/refresh:
+    post:
+      tags: [Users]
+      summary: Refresh tokens
+      description: 60 requests per minute per IP. Requires refresh_token cookie.
+      security:
+        - refreshCookie: []
+      responses:
+        '200':
+          description: Refreshed; sets new access_token and refresh_token cookies
+          headers:
+            Set-Cookie:
+              description: Rotated access_token and refresh_token cookies
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeRefresh' }
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+  /api/logout:
+    post:
+      tags: [Users]
+      summary: Logout (clear auth cookies)
+      description: 300/min per IP, 120/min per user.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Logged out; clears access_token and refresh_token cookies
+          headers:
+            Set-Cookie:
+              description: access_token and refresh_token cleared with expired cookies
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeLogout' }
+        '401':
+          description: Unauthorized (missing/invalid access token)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+  /api/profile:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeProfile' }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+    put:
+      tags: [Users]
+      summary: Update current user profile
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateProfileRequest' }
+            examples:
+              default:
+                value: { name: 'Jane Doe', avatar_url: 'https://cdn.example.com/a.jpg' }
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeProfile' }
+        '400':
+          description: Invalid payload or failed update
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+  /api/users/search:
+    get:
+      tags: [Users]
+      summary: Search users (Elasticsearch)
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/QParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeSearchResults' }
+        '400':
+          description: Missing query
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '500':
+          description: Search failed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+  /api/auth/verify/init:
+    post:
+      tags: [Auth]
+      summary: Initiate email verification
+      description: Rate limit 5/min per user. Returns verify link or already_verified=true.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Verification initiation result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeVerifyInit' }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '500':
+          description: Token generation or backend error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+  /api/auth/verify/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm email verification
+      description: Rate limit 30/min per IP+path.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VerifyConfirmRequest' }
+            examples:
+              default:
+                value: { token: 'abc123' }
+      responses:
+        '200':
+          description: Verified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeVerifyConfirm' }
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '500':
+          description: Verification unavailable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+  /api/auth/reset/init:
+    post:
+      tags: [Auth]
+      summary: Initiate password reset
+      description: Rate limit 5/min per IP+path. Always returns 200 with reset_link (may be empty).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResetInitRequest' }
+            examples:
+              default:
+                value: { email: user@example.com }
+      responses:
+        '200':
+          description: Reset link enqueued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeResetInit' }
+        '400':
+          description: Invalid payload
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '500':
+          description: Token generation failed or backend unavailable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+  /api/auth/reset/confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm password reset
+      description: Rate limit 30/min per IP+path.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResetConfirmRequest' }
+            examples:
+              default:
+                value: { token: 'abc123', new_password: 'Passw0rd!' }
+      responses:
+        '200':
+          description: Password updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeResetConfirm' }
+        '400':
+          description: Invalid payload or token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '500':
+          description: Reset unavailable or internal error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+  /api/email/send:
+    post:
+      tags: [Email]
+      summary: Enqueue an email to be sent (RabbitMQ)
+      description: Protected. Rate limit 60/min per user.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/EmailSendRequestTemplate'
+                - $ref: '#/components/schemas/EmailSendRequestRaw'
+            examples:
+              template:
+                value: { to: user@example.com, template: universal, data: { key: value } }
+              raw:
+                value: { to: user@example.com, subject: Hello, text: 'Hi' }
+      responses:
+        '202':
+          description: Email enqueued or sending disabled
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/EnvelopeEmailSendAccepted'
+                  - $ref: '#/components/schemas/EnvelopeEmailSendDisabled'
+        '400':
+          description: Invalid payload
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '500':
+          description: Failed to enqueue
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+  /api/debug/vars:
+    get:
+      tags: [Debug]
+      summary: expvar metrics (public)
+      description: >-
+        Returns runtime metrics as expvar JSON. Rate limit 120/min per IP. Note this endpoint is not wrapped in the standard envelope.
+        Feature flag: set DEBUG_METRICS_ENABLED=false to disable the route.
+      responses:
+        '200':
+          description: expvar JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /debug/vars:
+    get:
+      tags: [Debug]
+      summary: expvar metrics (root alias)
+      description: >-
+        Root-level alias for /api/debug/vars with same behavior and rate limit.
+        Feature flag: set DEBUG_METRICS_ENABLED=false to disable the route.
+      responses:
+        '200':
+          description: expvar JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
