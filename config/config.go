@@ -85,6 +85,9 @@ type Config struct {
 
 	// HTTP access log toggle (Gin logger)
 	HTTPLogEnabled bool
+
+	// Validation locale for go-playground translations (e.g., "en", "id")
+	ValidationLocale string
 }
 
 func getenv(key, def string) string {
@@ -191,11 +194,14 @@ func Load() *Config {
 		// Email sending toggle (default true for backward compatibility)
 		MailSendEnabled: getbool("MAIL_SEND_ENABLED", true),
 
-		// Debug metrics toggle (default true to preserve existing behavior)
-		DebugMetricsEnabled: getbool("DEBUG_METRICS_ENABLED", true),
+		// Debug metrics toggle (default false so it's off unless explicitly enabled)
+		DebugMetricsEnabled: getbool("DEBUG_METRICS_ENABLED", false),
 
 		// HTTP access log toggle (default false; enable when needed)
 		HTTPLogEnabled: getbool("HTTP_LOG_ENABLED", false),
+
+		// Validation translations locale (default English)
+		ValidationLocale: getenv("VALIDATION_LOCALE", "en"),
 	}
 }
 

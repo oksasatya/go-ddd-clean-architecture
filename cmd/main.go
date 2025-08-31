@@ -43,8 +43,8 @@ func main() {
 	logger := helpers.NewLogger(cfg.AppName, cfg.Env)
 	gin.SetMode(cfg.GinMode)
 
-	// Initialize custom validator (uses JSON field names, alias tags)
-	validation.Init()
+	// Initialize custom validator with locale translations (uses JSON field names, alias tags)
+	validation.Init(cfg.ValidationLocale)
 
 	ctx := context.Background()
 
