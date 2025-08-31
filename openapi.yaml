@@ -332,8 +332,9 @@ paths:
   /api/login:
     post:
       tags: [Users]
-      summary: Login with email and password
+      summary: Login with email and password (admin-only)
       description: |
+        Only users with role "admin" may log in. Non-admins receive 403 Forbidden.
         Rate limit: 10 requests per minute per IP.
         On trusted device, returns tokens via Set-Cookie and 200.
         Otherwise, 202 with requires_otp=true and sends OTP via email.
@@ -367,6 +368,11 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '403':
+          description: Forbidden (not an admin)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
         '503':
           description: OTP infrastructure unavailable
           content:
@@ -380,8 +386,10 @@ paths:
   /api/login/otp/confirm:
     post:
       tags: [Users]
-      summary: Confirm OTP to complete login
-      description: 60 requests per minute per IP+path.
+      summary: Confirm OTP to complete login (admin-only)
+      description: |
+        Only users with role "admin" may complete login. Non-admins receive 403 Forbidden.
+        60 requests per minute per IP+path.
       requestBody:
         required: true
         content:
@@ -404,6 +412,11 @@ paths:
               schema: { $ref: '#/components/schemas/EnvelopeLoginSuccess' }
         '401':
           description: Invalid or expired code
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnvelopeError' }
+        '403':
+          description: Forbidden (not an admin)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/EnvelopeError' }
@@ -697,7 +710,7 @@ paths:
       summary: expvar metrics (public)
       description: >-
         Returns runtime metrics as expvar JSON. Rate limit 120/min per IP. Note this endpoint is not wrapped in the standard envelope.
-        Feature flag: set DEBUG_METRICS_ENABLED=false to disable the route.
+        Feature flag: set DEBUG_METRICS_ENABLED=true to enable this route (disabled by default).
       responses:
         '200':
           description: expvar JSON
@@ -712,7 +725,7 @@ paths:
       summary: expvar metrics (root alias)
       description: >-
         Root-level alias for /api/debug/vars with same behavior and rate limit.
-        Feature flag: set DEBUG_METRICS_ENABLED=false to disable the route.
+        Feature flag: set DEBUG_METRICS_ENABLED=true to enable this route (disabled by default).
       responses:
         '200':
           description: expvar JSON

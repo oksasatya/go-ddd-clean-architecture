@@ -42,4 +42,32 @@ func main() {
 		log.Fatalf("failed to seed user: %v", err)
 	}
 	fmt.Printf("seeded user: id=%s email=%s name=%s password=%s\n", id, email, user, password)
+
+	// Ensure base roles exist
+	var adminRoleID, userRoleID string
+	if err := db.QueryRow(`
+		INSERT INTO roles (name) VALUES ('admin')
+		ON CONFLICT (name) DO UPDATE SET updated_at = now()
+		RETURNING id
+	`).Scan(&adminRoleID); err != nil {
+		log.Fatalf("failed to upsert admin role: %v", err)
+	}
+	if err := db.QueryRow(`
+		INSERT INTO roles (name) VALUES ('user')
+		ON CONFLICT (name) DO UPDATE SET updated_at = now()
+		RETURNING id
+	`).Scan(&userRoleID); err != nil {
+		log.Fatalf("failed to upsert user role: %v", err)
+	}
+	fmt.Printf("roles ensured: admin=%s user=%s\n", adminRoleID, userRoleID)
+
+	// Assign admin role to seeded user
+	if _, err := db.Exec(`
+		INSERT INTO user_roles (user_id, role_id)
+		VALUES ($1, $2)
+		ON CONFLICT (user_id, role_id) DO NOTHING
+	`, id, adminRoleID); err != nil {
+		log.Fatalf("failed to assign admin role: %v", err)
+	}
+	fmt.Println("assigned admin role to seeded user (if not already)")
 }

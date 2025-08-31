@@ -44,6 +44,7 @@ func buildUserDeps() UserModuleDeps {
 		container.GetRabbitPub(),
 		container.GetConfig(),
 		container.GetRedis(),
+		container.GetPGPool(),
 	)
 
 	return UserModuleDeps{
@@ -77,8 +78,8 @@ func InitModules(r *Registry) {
 	// Auth module
 	authHandler := buildAuthHandler(userDeps.Repo)
 	r.Add(modules.NewAuthModule(authHandler, container.GetJWT()))
-	// Debug module (under /api) behind feature flag
-	if cfg := container.GetConfig(); cfg == nil || cfg.DebugMetricsEnabled {
+	// Debug module (under /api) behind feature flag ONLY when explicitly enabled
+	if cfg := container.GetConfig(); cfg != nil && cfg.DebugMetricsEnabled {
 		r.Add(modules.NewDebugModule())
 		// Root-level alias for expvar metrics
 		rl := middleware.RateLimit(container.GetRedis(), 120, time.Minute, middleware.KeyByIP(), nil)

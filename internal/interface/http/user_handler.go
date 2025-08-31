@@ -22,6 +22,12 @@ import (
 	"github.com/oksasatya/go-ddd-clean-architecture/pkg/mailer"
 	"github.com/oksasatya/go-ddd-clean-architecture/pkg/response"
 	"github.com/oksasatya/go-ddd-clean-architecture/pkg/validation"
+
+	// added for role checks via sqlc
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/oksasatya/go-ddd-clean-architecture/internal/infrastructure/postgres/pgstore"
 )
 
 type UserHandler struct {
@@ -32,10 +38,11 @@ type UserHandler struct {
 	Pub     *helpers.RabbitPublisher
 	Cfg     *config.Config
 	RDB     *redis.Client
+	DB      *pgxpool.Pool
 }
 
-func NewUserHandler(svc *userapp.Service, jwt *helpers.JWTManager, logger *logrus.Logger, cookieDomain string, cookieSecure bool, pub *helpers.RabbitPublisher, cfg *config.Config, rdb *redis.Client) *UserHandler {
-	return &UserHandler{Svc: svc, JWT: jwt, Logger: logger, Cookies: helpers.NewCookie(cookieDomain, cookieSecure), Pub: pub, Cfg: cfg, RDB: rdb}
+func NewUserHandler(svc *userapp.Service, jwt *helpers.JWTManager, logger *logrus.Logger, cookieDomain string, cookieSecure bool, pub *helpers.RabbitPublisher, cfg *config.Config, rdb *redis.Client, db *pgxpool.Pool) *UserHandler {
+	return &UserHandler{Svc: svc, JWT: jwt, Logger: logger, Cookies: helpers.NewCookie(cookieDomain, cookieSecure), Pub: pub, Cfg: cfg, RDB: rdb, DB: db}
 }
 
 type loginRequest struct {
@@ -54,6 +61,30 @@ func (h *UserHandler) setTokenCookies(c *gin.Context, pair userapp.TokenPair) {
 	h.Cookies.SetPair(c, pair.AccessToken, pair.AccessTokenExpiry, pair.RefreshToken, pair.RefreshTokenExpiry)
 }
 
+func (h *UserHandler) isAdmin(ctx context.Context, userID string) (bool, error) {
+	if h.DB == nil || userID == "" {
+		return false, errors.New("db unavailable")
+	}
+	q := pgstore.New(h.DB)
+	var id pgtype.UUID
+	parsed, err := uuid.Parse(userID)
+	if err != nil {
+		return false, err
+	}
+	id.Bytes = parsed
+	id.Valid = true
+	roles, err := q.GetUserRoles(ctx, id)
+	if err != nil {
+		return false, err
+	}
+	for _, r := range roles {
+		if strings.EqualFold(r.Name, "admin") {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (h *UserHandler) Login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -61,17 +92,10 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	u, pair, err := h.Svc.Login(c.Request.Context(), req.Email, req.Password)
+	u, err := h.Svc.Authenticate(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		if errors.Is(err, userapp.ErrEmailNotVerified) {
-			response.Success[any](c, http.StatusAccepted, map[string]any{
-				"requires_verification": true,
-			}, "email not verified", nil)
-			return
-		}
 		status := http.StatusUnauthorized
 		msg := "invalid credentials"
-		// For non-auth errors, respond 500
 		if !errors.Is(err, userapp.ErrInvalidCredentials) {
 			status = http.StatusInternalServerError
 			msg = "login failed"
@@ -80,20 +104,33 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Only admins may proceed
+	if ok, aerr := h.isAdmin(c.Request.Context(), u.ID); aerr != nil {
+		response.Error[any](c, http.StatusInternalServerError, "login unavailable", nil)
+		return
+	} else if !ok {
+		response.Error[any](c, http.StatusForbidden, "forbidden", nil)
+		return
+	}
+
 	// Check trusted device (30 days)
 	deviceID, _ := c.Cookie("device_id")
 	trusted := false
 	if deviceID != "" && h.RDB != nil {
-		if v, _ := h.RDB.Get(c, helpers.KeyTrustedDevice(u.UserID, deviceID)).Result(); v == "1" {
+		if v, _ := h.RDB.Get(c, helpers.KeyTrustedDevice(u.ID, deviceID)).Result(); v == "1" {
 			trusted = true
 		}
 	}
 
 	if trusted {
-		// Set cookies using the pair returned from Login
+		pair, ierr := h.Svc.IssueTokens(c.Request.Context(), u)
+		if ierr != nil {
+			response.Error[any](c, http.StatusInternalServerError, "login failed", nil)
+			return
+		}
 		h.setTokenCookies(c, pair)
 		payload := map[string]any{
-			"user_id": u.UserID,
+			"user_id": u.ID,
 			"email":   u.Email,
 			"name":    u.Name,
 		}
@@ -111,7 +148,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		response.Error[any](c, http.StatusInternalServerError, "otp generation failed", nil)
 		return
 	}
-	_ = h.RDB.Set(c, helpers.KeyLoginOTP(u.UserID), code, 10*time.Minute).Err()
+	_ = h.RDB.Set(c, helpers.KeyLoginOTP(u.ID), code, 10*time.Minute).Err()
 
 	ip := c.GetString("real_ip")
 	if ip == "" {
@@ -169,6 +206,15 @@ func (h *UserHandler) LoginOTPConfirm(c *gin.Context) {
 	u, err := h.Svc.GetUserByEmail(c.Request.Context(), req.Email)
 	if err != nil || u == nil {
 		response.Error[any](c, http.StatusUnauthorized, "invalid code", nil)
+		return
+	}
+
+	// Only admins may proceed
+	if ok, aerr := h.isAdmin(c.Request.Context(), u.ID); aerr != nil {
+		response.Error[any](c, http.StatusInternalServerError, "login unavailable", nil)
+		return
+	} else if !ok {
+		response.Error[any](c, http.StatusForbidden, "forbidden", nil)
 		return
 	}
 

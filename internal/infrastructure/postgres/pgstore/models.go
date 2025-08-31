@@ -19,6 +19,13 @@ type AuditLog struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
+type Role struct {
+	ID        pgtype.UUID        `json:"id"`
+	Name      string             `json:"name"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
 type User struct {
 	ID         pgtype.UUID        `json:"id"`
 	Email      string             `json:"email"`
@@ -28,4 +35,10 @@ type User struct {
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
 	IsVerified bool               `json:"is_verified"`
+}
+
+type UserRole struct {
+	UserID    pgtype.UUID        `json:"user_id"`
+	RoleID    pgtype.UUID        `json:"role_id"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
